@@ -64,6 +64,24 @@ python -m media_monitoring.ingest
 python -m media_monitoring.ingest --sources reuters
 ```
 
+## Web UI + API
+Run a local dashboard and JSON API:
+
+```bash
+python -m media_monitoring.web
+```
+
+Then open:
+- `http://127.0.0.1:8000/` (UI)
+- `http://127.0.0.1:8000/api/articles` (JSON)
+
+Supported query params for UI/API:
+- `topic` (e.g. `ai`)
+- `outlet` (e.g. `Reuters`)
+- `q` (search title/url text)
+- `days` (e.g. `7`)
+- `limit` (max `1000`)
+
 ## Database schema
 See `media_monitoring/db/schema.sql`.
 
