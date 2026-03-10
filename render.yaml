@@ -1,0 +1,29 @@
+services:
+  - type: web
+    name: annies-press-tracker
+    runtime: python
+    plan: free
+    buildCommand: pip install -e .
+    startCommand: gunicorn -w 2 -k gthread -b 0.0.0.0:$PORT media_monitoring.web:app
+    envVars:
+      - key: APP_TITLE
+        value: Annie's Press Tracker
+      - key: PYTHON_VERSION
+        value: 3.11.11
+      - key: DATABASE_URL
+        sync: false
+
+  - type: cron
+    name: annies-press-tracker-daily-ingest
+    runtime: python
+    plan: free
+    schedule: "0 17 * * *"
+    buildCommand: pip install -e .
+    startCommand: python -m media_monitoring.ingest --init-db --max-author-lookups 80
+    envVars:
+      - key: APP_TITLE
+        value: Annie's Press Tracker
+      - key: PYTHON_VERSION
+        value: 3.11.11
+      - key: DATABASE_URL
+        sync: false

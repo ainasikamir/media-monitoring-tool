@@ -4,6 +4,7 @@ from pathlib import Path
 
 import psycopg
 from psycopg.rows import dict_row
+from psycopg.errors import UndefinedTable
 
 from media_monitoring.models import ArticleRecord
 
@@ -68,13 +69,16 @@ class ArticleRepository:
         return len(payload)
 
     def get_filter_options(self) -> dict[str, list[str]]:
-        with psycopg.connect(self.dsn) as conn:
-            with conn.cursor() as cur:
-                cur.execute("SELECT DISTINCT outlet FROM articles ORDER BY outlet")
-                outlets = [row[0] for row in cur.fetchall()]
-                cur.execute("SELECT DISTINCT topic FROM articles ORDER BY topic")
-                topics = [row[0] for row in cur.fetchall()]
-        return {"outlets": outlets, "topics": topics}
+        try:
+            with psycopg.connect(self.dsn) as conn:
+                with conn.cursor() as cur:
+                    cur.execute("SELECT DISTINCT outlet FROM articles ORDER BY outlet")
+                    outlets = [row[0] for row in cur.fetchall()]
+                    cur.execute("SELECT DISTINCT topic FROM articles ORDER BY topic")
+                    topics = [row[0] for row in cur.fetchall()]
+            return {"outlets": outlets, "topics": topics}
+        except UndefinedTable:
+            return {"outlets": [], "topics": []}
 
     def list_missing_authors(self, limit: int = 200) -> list[dict]:
         limit = max(1, min(limit, 5000))
@@ -150,6 +154,9 @@ class ArticleRepository:
 
         with psycopg.connect(self.dsn, row_factory=dict_row) as conn:
             with conn.cursor() as cur:
-                cur.execute(query, params)
-                rows = cur.fetchall()
+                try:
+                    cur.execute(query, params)
+                    rows = cur.fetchall()
+                except UndefinedTable:
+                    return []
         return rows

@@ -146,13 +146,20 @@ gunicorn -w 2 -k gthread -b 0.0.0.0:$PORT media_monitoring.web:app
 After deploy, share the Render URL, e.g.:
 - `https://annies-press-tracker.onrender.com`
 
+### Blueprint option (faster)
+This repo includes `render.yaml` for one-step setup:
+1. In Render, click **New +** -> **Blueprint**.
+2. Select this GitHub repo.
+3. Set `DATABASE_URL` when prompted (for both services).
+4. Deploy.
+
 ### 3) Keep data fresh daily
-On Render, add a Cron Job (daily) with command:
+`render.yaml` already defines a daily cron ingestion job.
 
-```bash
-python -m media_monitoring.ingest --max-author-lookups 80
-```
+Current cron schedule is `0 17 * * *` (UTC), which is:
+- 10:00 AM in Pacific Standard Time
+- 9:00 AM in Pacific Daylight Time
 
-Schedule in UTC. If you want 10:00 AM Los Angeles, set:
-- `18:00 UTC` during daylight saving time
-- `17:00 UTC` during standard time
+If you want exactly 10:00 AM year-round, change schedule seasonally between:
+- `0 17 * * *` (standard time)
+- `0 18 * * *` (daylight time)
