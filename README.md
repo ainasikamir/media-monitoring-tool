@@ -90,8 +90,3 @@ Main constraints and indexes:
 - topic enum-like check constraint
 - index on `(topic, published_at desc)`
 - index on `(outlet, published_at desc)`
-
-## Next outlets
-For your full target list (WSJ, Forbes, NYT, WaPo, Reuters, Bloomberg, Fortune, Wired, Business Insider, TechCrunch, The Verge), add connectors under `media_monitoring/connectors/`.
-
-For paywalled/restricted publishers, use licensed APIs/feeds rather than unrestricted scraping.
