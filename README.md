@@ -81,6 +81,7 @@ Supported query params for UI/API:
 - `q` (search title/url text)
 - `days` (e.g. `7`)
 - `limit` (max `1000`)
+- `page` (pagination page number)
 
 ## Database schema
 See `media_monitoring/db/schema.sql`.

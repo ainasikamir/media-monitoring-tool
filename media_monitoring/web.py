@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 from datetime import datetime
+from urllib.parse import urlencode
 
 from dotenv import load_dotenv
 from flask import Flask, jsonify, render_template_string, request
@@ -32,6 +33,8 @@ HTML_TEMPLATE = """
     th { background: #f9fafb; position: sticky; top: 0; }
     a { color: #175cd3; text-decoration: none; }
     .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; color: #475467; }
+    .pager { display: flex; gap: 8px; margin-top: 10px; align-items: center; }
+    .pager a { display: inline-block; padding: 6px 10px; border: 1px solid #d0d5dd; border-radius: 8px; }
   </style>
 </head>
 <body>
@@ -78,7 +81,7 @@ HTML_TEMPLATE = """
     </form>
 
     <div class="panel">
-      <div class="mono">{{rows|length}} rows</div>
+      <div class="mono">{{rows|length}} rows on page {{page}}</div>
       <table>
         <thead>
           <tr>
@@ -101,6 +104,14 @@ HTML_TEMPLATE = """
           {% endfor %}
         </tbody>
       </table>
+      <div class="pager">
+        {% if prev_url %}
+        <a href="{{prev_url}}">Previous</a>
+        {% endif %}
+        {% if next_url %}
+        <a href="{{next_url}}">Next</a>
+        {% endif %}
+      </div>
     </div>
   </div>
 </body>
@@ -144,10 +155,33 @@ def create_app() -> Flask:
         days_raw = request.args.get("days")
         days = _parse_int(days_raw, default=0)
         days = days if days > 0 else None
-        limit = _parse_int(request.args.get("limit"), default=100)
+        limit = _parse_int(request.args.get("limit"), default=250)
+        page = max(1, _parse_int(request.args.get("page"), default=1))
+        offset = (page - 1) * limit
 
-        rows = repo.list_articles(topic=topic, outlet=outlet, q=q, days=days, limit=limit)
+        rows = repo.list_articles(
+            topic=topic,
+            outlet=outlet,
+            q=q,
+            days=days,
+            limit=limit,
+            offset=offset,
+        )
         rows = [_to_iso(row) for row in rows]
+
+        base_params = {"topic": topic, "outlet": outlet, "q": q, "days": days, "limit": limit}
+        base_params = {k: v for k, v in base_params.items() if v is not None and v != ""}
+        prev_url = None
+        if page > 1:
+            prev_params = dict(base_params)
+            prev_params["page"] = page - 1
+            prev_url = "/?" + urlencode(prev_params)
+        next_url = None
+        if len(rows) == limit:
+            next_params = dict(base_params)
+            next_params["page"] = page + 1
+            next_url = "/?" + urlencode(next_params)
+
         return render_template_string(
             HTML_TEMPLATE,
             rows=rows,
@@ -158,6 +192,9 @@ def create_app() -> Flask:
             q=q,
             days=days,
             limit=limit,
+            page=page,
+            prev_url=prev_url,
+            next_url=next_url,
         )
 
     @app.get("/api/articles")
@@ -169,8 +206,17 @@ def create_app() -> Flask:
         days = _parse_int(days_raw, default=0)
         days = days if days > 0 else None
         limit = _parse_int(request.args.get("limit"), default=100)
+        page = max(1, _parse_int(request.args.get("page"), default=1))
+        offset = (page - 1) * limit
 
-        rows = repo.list_articles(topic=topic, outlet=outlet, q=q, days=days, limit=limit)
+        rows = repo.list_articles(
+            topic=topic,
+            outlet=outlet,
+            q=q,
+            days=days,
+            limit=limit,
+            offset=offset,
+        )
         return jsonify([_to_iso(row) for row in rows])
 
     @app.get("/health")

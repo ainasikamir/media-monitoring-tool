@@ -83,8 +83,10 @@ class ArticleRepository:
         q: str | None = None,
         days: int | None = None,
         limit: int = 100,
+        offset: int = 0,
     ) -> list[dict]:
         limit = max(1, min(limit, 1000))
+        offset = max(0, offset)
         conditions: list[str] = []
         params: list[object] = []
 
@@ -104,7 +106,7 @@ class ArticleRepository:
             params.append(days)
 
         where_clause = f"WHERE {' AND '.join(conditions)}" if conditions else ""
-        params.append(limit)
+        params.extend([limit, offset])
 
         query = f"""
             SELECT
@@ -118,7 +120,7 @@ class ArticleRepository:
             FROM articles
             {where_clause}
             ORDER BY published_at DESC NULLS LAST, ingested_at DESC
-            LIMIT %s
+            LIMIT %s OFFSET %s
         """
 
         with psycopg.connect(self.dsn, row_factory=dict_row) as conn:
