@@ -9,6 +9,7 @@ from xml.etree import ElementTree as ET
 from dateutil import parser as dt_parser
 
 from media_monitoring.connectors.base import BaseConnector
+from media_monitoring.connectors.byline import extract_author_from_url
 from media_monitoring.models import ArticleRecord
 from media_monitoring.topics import classify_topic
 
@@ -21,8 +22,9 @@ class ReutersConnector(BaseConnector):
         "https://www.reuters.com/arc/outboundfeeds/sitemap/?outputType=xml&from=200",
     )
 
-    def __init__(self, max_items_per_feed: int = 150):
+    def __init__(self, max_items_per_feed: int = 150, max_author_lookups: int = 40):
         self.max_items_per_feed = max_items_per_feed
+        self.max_author_lookups = max_author_lookups
 
     def _fetch_xml(self, url: str) -> str:
         req = Request(
@@ -56,6 +58,7 @@ class ReutersConnector(BaseConnector):
 
     def fetch(self) -> list[ArticleRecord]:
         records: list[ArticleRecord] = []
+        author_lookups = 0
         for sitemap_url in self.sitemap_urls:
             if len(records) >= self.max_items_per_feed:
                 break
@@ -79,12 +82,18 @@ class ReutersConnector(BaseConnector):
                 classification = classify_topic(title, loc)
                 if classification.topic == "unclassified":
                     continue
+                author_name = None
+                if author_lookups < self.max_author_lookups:
+                    author_name = extract_author_from_url(loc)
+                    author_lookups += 1
+                if not author_name:
+                    author_name = "Reuters Staff"
                 records.append(
                     ArticleRecord(
                         outlet=self.outlet,
                         article_url=loc,
                         article_title=title,
-                        author_name=None,
+                        author_name=author_name,
                         topic=classification.topic,
                         published_at=self._parse_published(lastmod),
                         topic_confidence=classification.confidence,

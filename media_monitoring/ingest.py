@@ -44,6 +44,12 @@ def parse_args() -> argparse.Namespace:
         help="Max entries per RSS feed",
     )
     parser.add_argument(
+        "--max-author-lookups",
+        type=int,
+        default=40,
+        help="Max article-page author lookups per source run",
+    )
+    parser.add_argument(
         "--init-db",
         action="store_true",
         help="Create database schema before ingestion",
@@ -74,7 +80,10 @@ def run() -> None:
     source_counts: dict[str, int] = defaultdict(int)
 
     for source_key in args.sources:
-        connector = CONNECTOR_REGISTRY[source_key](max_items_per_feed=args.max_items_per_feed)
+        connector = CONNECTOR_REGISTRY[source_key](
+            max_items_per_feed=args.max_items_per_feed,
+            max_author_lookups=args.max_author_lookups,
+        )
         rows = connector.fetch()
         fetched.extend(rows)
         source_counts[source_key] = len(rows)

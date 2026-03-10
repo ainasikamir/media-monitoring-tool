@@ -16,7 +16,7 @@ HTML_TEMPLATE = """
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Media Monitoring</title>
+  <title>{{app_title}}</title>
   <style>
     :root { color-scheme: light; }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; margin: 0; background: #f5f7fb; color: #101828; }
@@ -40,7 +40,7 @@ HTML_TEMPLATE = """
 <body>
   <div class="wrap">
     <div class="panel">
-      <h1>Media Monitoring Dashboard</h1>
+      <h1>{{app_title}}</h1>
       <p class="sub">Filter ingested articles by topic, outlet, text, and recency.</p>
     </div>
 
@@ -142,6 +142,7 @@ def create_app() -> Flask:
     dsn = os.getenv("DATABASE_URL")
     if not dsn:
         raise RuntimeError("DATABASE_URL is not set. Create .env from .env.example")
+    app_title = os.getenv("APP_TITLE", "Annie's Press Tracker")
 
     repo = ArticleRepository(dsn)
     app = Flask(__name__)
@@ -195,6 +196,7 @@ def create_app() -> Flask:
             page=page,
             prev_url=prev_url,
             next_url=next_url,
+            app_title=app_title,
         )
 
     @app.get("/api/articles")
@@ -230,4 +232,7 @@ app = create_app()
 
 
 if __name__ == "__main__":
-    app.run(host="127.0.0.1", port=8000, debug=True)
+    host = os.getenv("HOST", "0.0.0.0")
+    port = int(os.getenv("PORT", "8000"))
+    debug = os.getenv("DEBUG", "false").lower() == "true"
+    app.run(host=host, port=port, debug=debug)

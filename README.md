@@ -64,6 +64,21 @@ python -m media_monitoring.ingest
 python -m media_monitoring.ingest --sources reuters
 ```
 
+To improve author coverage when feeds omit bylines:
+
+```bash
+python -m media_monitoring.ingest --max-author-lookups 80
+```
+
+Backfill missing authors in already-saved rows:
+
+```bash
+python -m media_monitoring.backfill_authors --limit 300
+```
+
+Note: Reuters article pages currently block non-browser scraping in this workflow.
+When bylines cannot be extracted, Reuters rows are filled with `Reuters Staff`.
+
 ## Web UI + API
 Run a local dashboard and JSON API:
 
@@ -83,6 +98,12 @@ Supported query params for UI/API:
 - `limit` (max `1000`)
 - `page` (pagination page number)
 
+Set title branding (optional):
+
+```bash
+export APP_TITLE="Annie's Press Tracker"
+```
+
 ## Database schema
 See `media_monitoring/db/schema.sql`.
 
@@ -91,3 +112,47 @@ Main constraints and indexes:
 - topic enum-like check constraint
 - index on `(topic, published_at desc)`
 - index on `(outlet, published_at desc)`
+
+## Public Deployment (Free)
+To share with others, deploy instead of using `127.0.0.1`.
+
+Suggested stack:
+- App hosting: Render (free web service)
+- Database: Neon Postgres (free tier)
+
+### 1) Create a free Postgres database (Neon)
+1. Create a Neon project and copy the connection string.
+2. In Neon SQL editor, run the schema from `media_monitoring/db/schema.sql`.
+
+### 2) Deploy app on Render
+1. New Web Service -> connect this GitHub repo.
+2. Use name/slug: `annies-press-tracker`.
+3. Build command:
+
+```bash
+pip install -e .
+```
+
+4. Start command:
+
+```bash
+gunicorn -w 2 -k gthread -b 0.0.0.0:$PORT media_monitoring.web:app
+```
+
+5. Environment variables:
+- `DATABASE_URL` = your Neon connection string
+- `APP_TITLE` = `Annie's Press Tracker`
+
+After deploy, share the Render URL, e.g.:
+- `https://annies-press-tracker.onrender.com`
+
+### 3) Keep data fresh daily
+On Render, add a Cron Job (daily) with command:
+
+```bash
+python -m media_monitoring.ingest --max-author-lookups 80
+```
+
+Schedule in UTC. If you want 10:00 AM Los Angeles, set:
+- `18:00 UTC` during daylight saving time
+- `17:00 UTC` during standard time

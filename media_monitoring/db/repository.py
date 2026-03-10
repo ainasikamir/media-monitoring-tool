@@ -76,6 +76,31 @@ class ArticleRepository:
                 topics = [row[0] for row in cur.fetchall()]
         return {"outlets": outlets, "topics": topics}
 
+    def list_missing_authors(self, limit: int = 200) -> list[dict]:
+        limit = max(1, min(limit, 5000))
+        query = """
+            SELECT article_url, outlet
+            FROM articles
+            WHERE author_name IS NULL OR btrim(author_name) = ''
+            ORDER BY published_at DESC NULLS LAST, ingested_at DESC
+            LIMIT %s
+        """
+        with psycopg.connect(self.dsn, row_factory=dict_row) as conn:
+            with conn.cursor() as cur:
+                cur.execute(query, (limit,))
+                return cur.fetchall()
+
+    def update_author(self, article_url: str, author_name: str) -> None:
+        query = """
+            UPDATE articles
+            SET author_name = %s, ingested_at = NOW()
+            WHERE article_url = %s
+        """
+        with psycopg.connect(self.dsn) as conn:
+            with conn.cursor() as cur:
+                cur.execute(query, (author_name, article_url))
+            conn.commit()
+
     def list_articles(
         self,
         topic: str | None = None,
