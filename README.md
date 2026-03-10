@@ -33,7 +33,7 @@ The ingestion path filters out `unclassified` records for cleaner monitoring fee
 1. Create a virtual environment and install dependencies:
 
 ```bash
-cd /Users/ajnazikamir/media_monitoring_tool
+cd media_monitoring_tool
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -e .
