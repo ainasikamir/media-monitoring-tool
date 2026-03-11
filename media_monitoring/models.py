@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from datetime import datetime
 
 
-ALLOWED_TOPICS = {
+TOPIC_ORDER = (
     "sxsw",
     "ai",
     "business",
@@ -13,7 +13,9 @@ ALLOWED_TOPICS = {
     "health",
     "breaking_news",
     "unclassified",
-}
+)
+
+ALLOWED_TOPICS = set(TOPIC_ORDER)
 
 
 @dataclass(slots=True)

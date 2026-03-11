@@ -41,7 +41,7 @@ HTML_TEMPLATE = """
   <div class="wrap">
     <div class="panel">
       <h1>{{app_title}}</h1>
-      <p class="sub">Filter ingested articles by topic, outlet, text, and recency.</p>
+      <p class="sub">Filter by topic/outlet and search keywords across title, URL, author, outlet, and topic.</p>
     </div>
 
     <form class="panel" method="get" action="/">
@@ -66,7 +66,7 @@ HTML_TEMPLATE = """
         </div>
         <div>
           <label for="q">Search</label>
-          <input id="q" name="q" value="{{q or ''}}" placeholder="title or URL">
+          <input id="q" name="q" value="{{q or ''}}" placeholder="keywords: ai senate startup">
         </div>
         <div>
           <label for="days">Days</label>
@@ -78,6 +78,7 @@ HTML_TEMPLATE = """
         </div>
       </div>
       <button type="submit">Apply Filters</button>
+      <a href="/" style="margin-left:10px; color:#175cd3; text-decoration:none;">Clear</a>
     </form>
 
     <div class="panel">

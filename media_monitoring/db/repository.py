@@ -6,7 +6,7 @@ import psycopg
 from psycopg.rows import dict_row
 from psycopg.errors import UndefinedTable
 
-from media_monitoring.models import ArticleRecord
+from media_monitoring.models import ArticleRecord, TOPIC_ORDER
 
 
 SCHEMA_PATH = Path(__file__).with_name("schema.sql")
@@ -75,10 +75,11 @@ class ArticleRepository:
                     cur.execute("SELECT DISTINCT outlet FROM articles ORDER BY outlet")
                     outlets = [row[0] for row in cur.fetchall()]
                     cur.execute("SELECT DISTINCT topic FROM articles ORDER BY topic")
-                    topics = [row[0] for row in cur.fetchall()]
-            return {"outlets": outlets, "topics": topics}
+                    db_topics = {row[0] for row in cur.fetchall()}
+            ordered_topics = [topic for topic in TOPIC_ORDER if topic in db_topics or topic != "unclassified"]
+            return {"outlets": outlets, "topics": ordered_topics}
         except UndefinedTable:
-            return {"outlets": [], "topics": []}
+            return {"outlets": [], "topics": [topic for topic in TOPIC_ORDER if topic != "unclassified"]}
 
     def list_missing_authors(self, limit: int = 200) -> list[dict]:
         limit = max(1, min(limit, 5000))
@@ -126,9 +127,19 @@ class ArticleRepository:
             conditions.append("outlet = %s")
             params.append(outlet)
         if q:
-            conditions.append("(article_title ILIKE %s OR article_url ILIKE %s)")
-            like = f"%{q}%"
-            params.extend([like, like])
+            terms = [term for term in q.strip().split() if term]
+            for term in terms:
+                like = f"%{term}%"
+                conditions.append(
+                    "("
+                    "article_title ILIKE %s OR "
+                    "article_url ILIKE %s OR "
+                    "COALESCE(author_name, '') ILIKE %s OR "
+                    "outlet ILIKE %s OR "
+                    "topic ILIKE %s"
+                    ")"
+                )
+                params.extend([like, like, like, like, like])
         if days is not None:
             days = max(1, min(days, 3650))
             conditions.append("published_at >= NOW() - (%s::int * INTERVAL '1 day')")
