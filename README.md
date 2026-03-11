@@ -19,6 +19,7 @@ It also stores operational fields: `outlet`, `published_at`, `ingested_at`, `top
 
 ## Topics
 Supported topic labels:
+- `sxsw`
 - `ai`
 - `business`
 - `tech`
@@ -44,6 +45,16 @@ pip install -e .
 ```bash
 cp .env.example .env
 # edit .env with your Postgres credentials
+```
+
+Optional: enable Oxylabs proxy (used by default when configured):
+
+```bash
+OXYLABS_USERNAME=...
+OXYLABS_PASSWORD=...
+OXYLABS_PROXY_HOST=pr.oxylabs.io
+OXYLABS_PROXY_PORT=7777
+USE_PROXY_DEFAULT=true
 ```
 
 3. Run ingestion and initialize schema:
@@ -77,7 +88,7 @@ python -m media_monitoring.backfill_authors --limit 300
 ```
 
 Note: Reuters article pages currently block non-browser scraping in this workflow.
-When bylines cannot be extracted, Reuters rows are filled with `Reuters Staff`.
+When Reuters bylines cannot be extracted, `author_name` may remain blank.
 
 ## Web UI + API
 Run a local dashboard and JSON API:

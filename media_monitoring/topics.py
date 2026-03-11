@@ -11,6 +11,13 @@ class TopicMatch:
 
 
 TOPIC_KEYWORDS: dict[str, tuple[str, ...]] = {
+    "sxsw": (
+        "sxsw",
+        "south by southwest",
+        "sxsw 2026",
+        "sxsw festival",
+        "sxsw conference",
+    ),
     "ai": (
         "artificial intelligence",
         "machine learning",
@@ -82,6 +89,8 @@ TOPIC_KEYWORDS: dict[str, tuple[str, ...]] = {
 }
 
 URL_HINTS: dict[str, str] = {
+    "/sxsw": "sxsw",
+    "/south-by-southwest": "sxsw",
     "/technology": "tech",
     "/tech": "tech",
     "/business": "business",

@@ -3,7 +3,8 @@ from __future__ import annotations
 import json
 import re
 from html import unescape
-from urllib.request import Request, urlopen
+
+from media_monitoring.network import fetch_text
 
 
 META_AUTHOR_PATTERNS = (
@@ -34,15 +35,14 @@ def _clean_author(value: str | None) -> str | None:
 
 def _fetch_html(url: str) -> str | None:
     try:
-        req = Request(
+        return fetch_text(
             url,
             headers={
                 "User-Agent": "Mozilla/5.0 (compatible; MediaMonitoringBot/0.1; +local-dev)",
                 "Accept": "text/html,application/xhtml+xml;q=0.9,*/*;q=0.8",
             },
+            timeout=15,
         )
-        with urlopen(req, timeout=15) as response:
-            return response.read().decode("utf-8", errors="replace")
     except Exception:
         return None
 

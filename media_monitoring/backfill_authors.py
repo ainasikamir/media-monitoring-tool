@@ -33,15 +33,10 @@ def run() -> None:
 
     updated = 0
     scanned = 0
-    fallback_updates = 0
     for row in targets:
         scanned += 1
         url = row["article_url"]
-        outlet = row["outlet"]
         author = extract_author_from_url(url)
-        if not author and outlet == "Reuters":
-            author = "Reuters Staff"
-            fallback_updates += 1
         if not author:
             continue
         repo.update_author(url, author)
@@ -50,7 +45,6 @@ def run() -> None:
     print("Author backfill complete")
     print(f"- scanned={scanned}")
     print(f"- updated={updated}")
-    print(f"- fallback_reuters_staff={fallback_updates}")
 
 
 if __name__ == "__main__":

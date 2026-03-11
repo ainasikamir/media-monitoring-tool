@@ -3,7 +3,6 @@ from __future__ import annotations
 from datetime import datetime
 from html import unescape
 from urllib.parse import urlparse
-from urllib.request import Request, urlopen
 from xml.etree import ElementTree as ET
 
 from dateutil import parser as dt_parser
@@ -11,6 +10,7 @@ from dateutil import parser as dt_parser
 from media_monitoring.connectors.base import BaseConnector
 from media_monitoring.connectors.byline import extract_author_from_url
 from media_monitoring.models import ArticleRecord
+from media_monitoring.network import fetch_text
 from media_monitoring.topics import classify_topic
 
 
@@ -27,15 +27,19 @@ class ReutersConnector(BaseConnector):
         self.max_author_lookups = max_author_lookups
 
     def _fetch_xml(self, url: str) -> str:
-        req = Request(
+        def is_sitemap_payload(payload: bytes) -> bool:
+            sample = payload[:2000].lower()
+            return b"<urlset" in sample or b"<sitemapindex" in sample
+
+        return fetch_text(
             url,
             headers={
                 "User-Agent": "Mozilla/5.0 (compatible; MediaMonitoringBot/0.1; +local-dev)",
                 "Accept": "application/xml,text/xml;q=0.9,*/*;q=0.8",
             },
+            timeout=20,
+            validator=is_sitemap_payload,
         )
-        with urlopen(req, timeout=20) as response:
-            return response.read().decode("utf-8", errors="replace")
 
     def _url_to_title(self, article_url: str) -> str:
         path = urlparse(article_url).path.strip("/")
@@ -86,8 +90,6 @@ class ReutersConnector(BaseConnector):
                 if author_lookups < self.max_author_lookups:
                     author_name = extract_author_from_url(loc)
                     author_lookups += 1
-                if not author_name:
-                    author_name = "Reuters Staff"
                 records.append(
                     ArticleRecord(
                         outlet=self.outlet,

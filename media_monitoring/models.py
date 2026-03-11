@@ -5,6 +5,7 @@ from datetime import datetime
 
 
 ALLOWED_TOPICS = {
+    "sxsw",
     "ai",
     "business",
     "tech",

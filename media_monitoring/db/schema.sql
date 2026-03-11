@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS articles (
     topic_confidence NUMERIC(4,3) NOT NULL DEFAULT 0,
     CONSTRAINT uq_articles_article_url UNIQUE (article_url),
     CONSTRAINT chk_topic CHECK (topic IN (
+        'sxsw',
         'ai',
         'business',
         'tech',

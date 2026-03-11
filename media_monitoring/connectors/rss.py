@@ -9,6 +9,7 @@ from dateutil import parser as dt_parser
 from media_monitoring.connectors.base import BaseConnector
 from media_monitoring.connectors.byline import extract_author_from_url
 from media_monitoring.models import ArticleRecord
+from media_monitoring.network import fetch_bytes
 from media_monitoring.topics import classify_topic
 
 
@@ -53,8 +54,24 @@ class RSSConnector(BaseConnector):
         return tags
 
     def _iter_entries(self) -> Iterable[feedparser.FeedParserDict]:
+        def is_feed_payload(payload: bytes) -> bool:
+            sample = payload[:2000].lower()
+            return b"<rss" in sample or b"<feed" in sample or b"<rdf" in sample
+
         for feed_url in self.feed_urls:
-            parsed = feedparser.parse(feed_url)
+            try:
+                payload = fetch_bytes(
+                    feed_url,
+                    headers={
+                        "User-Agent": "Mozilla/5.0 (compatible; MediaMonitoringBot/0.1; +local-dev)",
+                        "Accept": "application/rss+xml,application/xml,text/xml;q=0.9,*/*;q=0.8",
+                    },
+                    timeout=20,
+                    validator=is_feed_payload,
+                )
+                parsed = feedparser.parse(payload)
+            except Exception:
+                continue
             if getattr(parsed, "bozo", False):
                 continue
             entries = getattr(parsed, "entries", [])[: self.max_items_per_feed]
