@@ -39,7 +39,8 @@ def _open(req: Request, timeout: int, use_proxy: bool) -> bytes:
         with opener.open(req, timeout=timeout) as response:
             return response.read()
 
-    with build_opener().open(req, timeout=timeout) as response:
+    # Explicitly disable auto-detected system proxies for direct fallback.
+    with build_opener(ProxyHandler({})).open(req, timeout=timeout) as response:
         return response.read()
 
 
@@ -55,7 +56,7 @@ def fetch_bytes(
     - true (default): proxy -> direct
     - false: direct -> proxy
     """
-    req = Request(url, headers=headers or {})
+    req_headers = headers or {}
     proxy_first = _truthy(os.getenv("USE_PROXY_DEFAULT"), default=True)
     has_proxy = _proxy_url() is not None
 
@@ -68,6 +69,8 @@ def fetch_bytes(
     last_error: Exception | None = None
     for use_proxy in attempts:
         try:
+            # Build a fresh request each attempt to avoid proxy state carry-over.
+            req = Request(url, headers=req_headers)
             payload = _open(req, timeout=timeout, use_proxy=use_proxy)
             if validator is not None and not validator(payload):
                 last_error = RuntimeError("Fetched payload failed validation")
